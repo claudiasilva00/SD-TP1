@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{460A14BA-6452-4DC7-8D8C-C2C713293B3A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wavy", "Wavy\Wavy.csproj", "{E6F44AD1-CD53-4A2D-9215-D860CEF3A58A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aggregator", "Aggregator\Aggregator.csproj", "{2CB28400-C7DB-4549-AE90-42635CCBFED2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{460A14BA-6452-4DC7-8D8C-C2C713293B3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{460A14BA-6452-4DC7-8D8C-C2C713293B3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{460A14BA-6452-4DC7-8D8C-C2C713293B3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{460A14BA-6452-4DC7-8D8C-C2C713293B3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6F44AD1-CD53-4A2D-9215-D860CEF3A58A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6F44AD1-CD53-4A2D-9215-D860CEF3A58A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6F44AD1-CD53-4A2D-9215-D860CEF3A58A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6F44AD1-CD53-4A2D-9215-D860CEF3A58A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CB28400-C7DB-4549-AE90-42635CCBFED2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CB28400-C7DB-4549-AE90-42635CCBFED2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CB28400-C7DB-4549-AE90-42635CCBFED2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CB28400-C7DB-4549-AE90-42635CCBFED2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0A06B856-3839-4860-A048-18D536D9A2AD}
+	EndGlobalSection
+EndGlobal
