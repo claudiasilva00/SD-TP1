@@ -1,0 +1,4 @@
+﻿wavy_id,data_type,preprocess,server_ip,server_port
+WAVY_01,TEMP,true,127.0.0.1,5001
+WAVY_01,SAL,false,127.0.0.1,5001
+WAVY_02,TEMP,false,127.0.0.1,5002
