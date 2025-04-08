@@ -199,30 +199,26 @@ class Aggregator
     }
     static bool Preprocess(string type, string value)
     {
-        Console.WriteLine($"🧪 [DEBUG] Entrou no Preprocess com type={type}, value={value}");
+        Console.WriteLine($"[DEBUG] Entrou no Preprocess com type={type}, value={value}");
 
-        if (type == "TEMP")
+        if (type == "TEMP" && double.TryParse(value, out double temp))
         {
-            if (double.TryParse(value, out double temp))
+            if (temp >= 0 && temp <= 40)
             {
-                bool result = temp >= 0 && temp <= 40;
-                Console.WriteLine($"🧪 Resultado TEMP: {result}");
-                return result;
+                Console.WriteLine("✅ TEMP válido.");
+                return true;
             }
-            else
-            {
-                Console.WriteLine($"⚠️ Valor TEMP inválido: {value}");
-                return false;
-            }
+            Console.WriteLine($"❌ Valor TEMP inválido: {temp}");
+            return false;
         }
 
-        return true;
+        return true; // Por omissão, aceitar outros tipos de dados
     }
-
 
 }
 
-// para teste de commits no github
+
+
 
 
 
