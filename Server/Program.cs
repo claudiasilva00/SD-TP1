@@ -3,9 +3,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.IO;
 
 class Server
 {
+    static readonly Mutex mutex = new Mutex();
+
     static void Main()
     {
         TcpListener listener = new TcpListener(IPAddress.Any, 5001);
@@ -40,6 +43,16 @@ class Server
             }
             else if (message.StartsWith("FORWARD DATA"))
             {
+                string[] parts = message.Split(' ');
+                if (parts.Length >= 5)
+                {
+                    string wavyId = parts[2].Trim();
+                    string dataType = parts[3].Trim();
+                    string value = parts[4].Trim();
+
+                    LogToFile(wavyId, dataType, value);
+                }
+
                 byte[] response = Encoding.UTF8.GetBytes("100 OK");
                 stream.Write(response, 0, response.Length);
             }
@@ -47,11 +60,30 @@ class Server
             {
                 byte[] response = Encoding.UTF8.GetBytes("400 BYE");
                 stream.Write(response, 0, response.Length);
-                Console.WriteLine("?? Server encerrando conexão com WAVY.");
+                Console.WriteLine("🛑 Server encerrando conexão com WAVY.");
                 break;
             }
         }
 
         client.Close();
     }
+
+
+    static void LogToFile(string wavyId, string dataType, string value)
+    {
+        mutex.WaitOne();  // 🛑 Bloqueia o acesso até a thread atual terminar
+
+        try
+        {
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            string line = $"{timestamp},{wavyId},{dataType},{value}";
+
+            File.AppendAllText("server_log.csv", line + Environment.NewLine);
+        }
+        finally
+        {
+            mutex.ReleaseMutex();  // 🔓 Liberta o acesso para a próxima thread
+        }
+    }
+
 }
