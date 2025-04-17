@@ -18,55 +18,37 @@ class Aggregator
     static Dictionary<string, string> wavyStates;
     static Dictionary<string, RoutingRule> routingRules;
     static List<string> dataBuffer = new List<string>();  // Armazena os dados recebidos
-    static System.Timers.Timer dataTimer;  // Timer para enviar os dados a cada 30 segundos
-    static System.Timers.Timer collectTimer;  // Timer para coletar dados por 10 segundos
+    static System.Timers.Timer dataSendTimer;  // Temporizador para enviar os dados a cada 40 segundos
     static bool isRunning = true; // Flag para controlar a execução do servidor
-    static System.Timers.Timer dataSendTimer;
-    static TcpListener listener; // O listener global para aceitar conexões
-    static List<Thread> activeThreads = new List<Thread>(); // Lista de threads ativas para encerrar depois
+    static TcpListener listener = new TcpListener(IPAddress.Any, 5000);
 
     static void Main()
     {
         wavyStates = LoadWavyStates("waves.csv");
         routingRules = LoadRoutingRules("routing.csv");
 
-        // Inicializa o listener para aceitar conexões dos dispositivos WAVY
-        TcpListener listener = new TcpListener(IPAddress.Any, 5000);
         listener.Start();
-        Console.WriteLine("Aggregator started, waiting for WAVY devices...");
-
-        /* // Timer para enviar os dados acumulados a cada 30 segundos
-         dataTimer = new System.Timers.Timer(40000); // 
-         dataTimer.Elapsed += (sender, e) => SendDataToServer(); // Envia dados ao servidor a cada 40 segundos
-         dataTimer.Start();
-
-         // Timer para coletar os dados a cada 40 segundos
-         collectTimer = new System.Timers.Timer(40000); 
-         collectTimer.Elapsed += (sender, e) => CollectData(); // Coleta dados a cada 0 segundos
-         collectTimer.Start();*/
+        Console.WriteLine("Agregador iniciado, aguardando dispositivos WAVY...");
 
         // Temporizador para enviar os dados acumulados a cada 40 segundos
-        dataSendTimer = new System.Timers.Timer(40000);  // 40 segundos
-        dataSendTimer.Elapsed += (sender, e) => SendDataToServer(); // Envia dados ao servidor a cada 40 segundos
+        dataSendTimer = new System.Timers.Timer(40000);
+        dataSendTimer.Elapsed += (sender, e) => SendDataToServer();
         dataSendTimer.Start();
+
         // Inicia o thread para lidar com comandos do console
         Thread consoleThread = new Thread(HandleConsoleCommands);
         consoleThread.Start();
 
-        while (isRunning) // A execução do servidor depende da flag isRunning
+        while (isRunning)
         {
             TcpClient wavyClient = listener.AcceptTcpClient();
             Thread t = new Thread(() => HandleWavy(wavyClient));
-            activeThreads.Add(t); // Armazena a thread ativa
             t.Start();
         }
-        foreach (var thread in activeThreads)
-        {
-            thread.Join(); // Espera cada thread terminar
-        }
 
-        Console.WriteLine("Aggregator stopped.");
+        Console.WriteLine("Agregador encerrado.");
     }
+
     static void HandleConsoleCommands()
     {
         while (isRunning)
@@ -87,7 +69,7 @@ class Aggregator
             }
             else if (command == "FORWARD_QUIT")
             {
-                SendForwardQuitToServer(listener);  // Envia FORWARD QUIT para o servidor
+                SendForwardQuitToServer();  // Envia FORWARD QUIT para o servidor
             }
             else
             {
@@ -95,16 +77,22 @@ class Aggregator
             }
         }
     }
-    static void SendForwardQuitToServer(TcpListener listener)
+
+    static void SendForwardQuitToServer()
     {
         ForwardToServer("FORWARD QUIT", null, "127.0.0.1", 5001);
-        Console.WriteLine("Conexão com o servidor encerrada.");
 
-        // Fechar o TcpListener para parar de aceitar novas conexões
-        listener.Stop(); // Parando o listener
+        // Fechar o listener para que ele pare de aceitar novas conexões
+        listener.Stop();
         Console.WriteLine("Listener parado.");
 
-        isRunning = false; // Isso vai parar o loop do servidor, finalizando o Agregador
+        // Fechar o flag isRunning para que o Agregador pare
+        isRunning = false;
+
+        // Salva os dados no arquivo CSV antes de encerrar
+        SaveCollectedData();
+
+        // Exibe mensagem final
         Console.WriteLine("Agregador encerrado.");
     }
 
@@ -127,9 +115,9 @@ class Aggregator
                         string message = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
                         Console.WriteLine($"WAVY Sent: {message}");
 
-                        // Processa comandos de registro
                         if (message.StartsWith("REGISTER"))
                         {
+                            // Processa o comando REGISTER
                             string[] parts = message.Split(' ');
                             if (parts.Length >= 2)
                             {
@@ -150,20 +138,16 @@ class Aggregator
                                     SendResponseToWavy(wavyStream, $"403 BLOCKED STATE: {wavyStates[wavyId]}");
                                     continue;
                                 }
-
-                                // Se estiver tudo correto, encaminha o comando para o servidor
-                                ForwardToServer($"FORWARD {message}", wavyStream, "127.0.0.1", 5001); // SERVER FIXO PARA REGISTER
+                                // Envia a resposta para o servidor
+                                ForwardToServer($"FORWARD {message}", wavyStream, "127.0.0.1", 5001);
                             }
                         }
-                        // Processa comandos de dados
                         else if (message.StartsWith("DATA"))
                         {
-                            // Adiciona o dado no buffer
+                            // Armazena o dado no buffer
                             dataBuffer.Add(message);
                             Console.WriteLine($"Dado armazenado: {message}");
                         }
-
-                        // Processa o comando QUIT
                         else if (message == "QUIT")
                         {
                             // Envia a resposta de encerramento para o WAVY
@@ -176,16 +160,13 @@ class Aggregator
                             wavyClient.Close();
 
                             // AQUI NÃO ENCERRAMOS O AGREGADOR. O servidor continua em execução.
-                            Console.WriteLine("Conexão com o WAVY encerrada. O Agregador continua em execução...");
-                        }
-                        else
-                        {
-                            break; // Caso o bytesRead seja 0, significa que a conexão foi fechada.
+                            Console.WriteLine("Conexão com o WAVY encerrada.");
+                            break;  // Sai do loop quando o WAVY se desconectar
                         }
                     }
+                }
             }
         }
-            }
         catch (Exception ex)
         {
             Console.WriteLine($"Erro ao lidar com o cliente WAVY: {ex.Message}");
@@ -237,7 +218,7 @@ class Aggregator
         if (dataBuffer.Count == 0)
         {
             Console.WriteLine("Nenhum dado para enviar.");
-            return;
+            return; // Se o buffer estiver vazio, não envia nada
         }
 
         // Cria o arquivo CSV para os dados
@@ -274,19 +255,19 @@ class Aggregator
         // Limpa o buffer após enviar os dados
         dataBuffer.Clear();
     }
-/*// Coleta dados por 10 segundos
-    static void CollectData()
-    {
-        // Se não houver dados no buffer, não faz nada
-        if (dataBuffer.Count == 0)
-            return;
+    /*// Coleta dados por 10 segundos
+        static void CollectData()
+        {
+            // Se não houver dados no buffer, não faz nada
+            if (dataBuffer.Count == 0)
+                return;
 
-        Console.WriteLine("Coletando dados...");
+            Console.WriteLine("Coletando dados...");
 
-        // Você pode adicionar lógica aqui para processar os dados se necessário
-    
-    }*/
-   
+            // Você pode adicionar lógica aqui para processar os dados se necessário
+
+        }*/
+
     // Função para encaminhar a mensagem para o servidor
     static void ForwardToServer(string message, NetworkStream wavyStream, string ip, int port)
     {

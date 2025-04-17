@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 using System.Timers;
+using System.Collections.Generic;
 
 class Wavy
 {
@@ -13,6 +14,9 @@ class Wavy
     static Random random = new Random(); // Instância para gerar números aleatórios
     static string wavyId;  // Variável para armazenar o ID do WAVY após o registro
     static List<string> dataBuffer = new List<string>();
+
+    // Flag para controlar se os dados estão sendo gerados
+    static bool isGeneratingData = true;
 
     static void Main()
     {
@@ -42,9 +46,13 @@ class Wavy
                 // Enviar uma mensagem de saída para o Agregador
                 SendMessage(stream, "QUIT");
                 // Parar o temporizador e fechar a conexão
-                dataTimer?.Stop();  // Garante que o temporizador seja parado antes de encerrar
-
-                break; // Saí do loop de execução após enviar o comando de saída
+                dataCollectionTimer?.Stop();
+                dataSendTimer?.Stop();
+                break;
+            }
+            else if (command == "STOP DATA")
+            {
+                StopDataGeneration(); // Comando para parar a geração de dados
             }
             else
             {
@@ -89,38 +97,14 @@ class Wavy
         }
     }
 
-    /*  static void StartSendingData()
-      {
-          // Configura o temporizador para enviar dados a cada 1 segundos
-          dataTimer = new System.Timers.Timer(1000); // Envia dados a cada 1 segundo
-          dataTimer.Elapsed += (sender, e) => SendData(); // Chama o método SendData ao final de cada intervalo
-          dataTimer.Start();
-
-          Console.WriteLine("Começando a enviar dados TEMP periodicamente...");
-      }
-   
-
-    static void SendData()
+    // Comando para parar a geração de dados
+    static void StopDataGeneration()
     {
-        if (string.IsNullOrEmpty(wavyId))
-        {
-            Console.WriteLine("Erro: WAVY não registrada. Envio de dados não possível.");
-            return;
-        }
+        isGeneratingData = false;
+        Console.WriteLine("Geração de dados parada.");
+    }
 
-        // Gerar dados do tipo TEMP com valor aleatório
-        string dataType = "TEMP";
-        string value = random.Next(-10, 41).ToString();  // Gera um valor aleatório de temperatura entre -10 e 40
-
-        // Formando a mensagem com os dados do tipo TEMP
-        string message = $"DATA {wavyId} {dataType} {value}";
-
-        // Enviar os dados para o Agregador
-        SendMessage(stream, message);  
-
-        Console.WriteLine($"Dados enviados ao Agregador: {message}");
-    }*/
- static void StartDataCollection()
+    static void StartDataCollection()
     {
         // Temporizador para coletar dados a cada 10 segundos
         dataCollectionTimer = new System.Timers.Timer(3000);
@@ -128,14 +112,21 @@ class Wavy
         dataCollectionTimer.Start();
 
         // Temporizador para enviar dados ao Agregador a cada 30 segundos
-        dataSendTimer = new System.Timers.Timer(10000);
+        dataSendTimer = new System.Timers.Timer(3000);
         dataSendTimer.Elapsed += (sender, e) => SendData();
         dataSendTimer.Start();
 
         Console.WriteLine("Começando a coletar e enviar dados TEMP periodicamente...");
     }
+
     static void CollectData()
     {
+        // Se a flag isGeneratingData estiver desativada, não gera dados
+        if (!isGeneratingData)
+        {
+            return;  // Interrompe a coleta de dados
+        }
+
         // Gerar dados do tipo TEMP com valor aleatório
         string dataType = "TEMP";
         string value = random.Next(-10, 41).ToString();  // Gera um valor aleatório de temperatura entre -10 e 40
@@ -167,6 +158,7 @@ class Wavy
         // Limpa o buffer após o envio
         dataBuffer.Clear();
     }
+
     static void SendMessage(NetworkStream stream, string message)
     {
         byte[] data = Encoding.UTF8.GetBytes(message);

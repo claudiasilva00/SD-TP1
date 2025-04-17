@@ -11,10 +11,12 @@ class Server
 
     static void Main()
     {
+        // Inicializa o servidor para escutar na porta 5001
         TcpListener listener = new TcpListener(IPAddress.Any, 5001);
         listener.Start();
         Console.WriteLine("Servidor iniciado, aguardando conexões...");
 
+        // Aceita as conexões dos clientes e cria uma thread para cada cliente
         while (true)
         {
             TcpClient client = listener.AcceptTcpClient();
@@ -23,6 +25,7 @@ class Server
         }
     }
 
+    // Função para lidar com os dados recebidos de cada cliente
     static void HandleClient(TcpClient client)
     {
         NetworkStream stream = client.GetStream();
@@ -30,17 +33,20 @@ class Server
 
         while (true)
         {
+            // Lê a mensagem do cliente
             int bytesRead = stream.Read(buffer, 0, buffer.Length);
             if (bytesRead == 0) break;
 
             string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
             Console.WriteLine($"Recebido: {message}");
 
+            // Processamento do comando FORWARD REGISTER
             if (message.StartsWith("FORWARD REGISTER"))
             {
                 byte[] response = Encoding.UTF8.GetBytes("ACK REGISTERED");
                 stream.Write(response, 0, response.Length);
             }
+            // Processamento do comando FORWARD DATA
             else if (message.StartsWith("FORWARD DATA"))
             {
                 // Processamento de dados recebidos
@@ -51,25 +57,29 @@ class Server
                     string dataType = parts[3].Trim();
                     string value = parts[4].Trim();
 
-                    LogToFile(wavyId, dataType, value);  // Regista os dados no arquivo de log
+                    // Registra os dados no arquivo de log
+                    LogToFile(wavyId, dataType, value);
                 }
 
                 // Responde ao Agregador
                 byte[] response = Encoding.UTF8.GetBytes("100 OK");
                 stream.Write(response, 0, response.Length);
             }
+            // Processamento do comando FORWARD QUIT
             else if (message.StartsWith("FORWARD QUIT"))
             {
                 byte[] response = Encoding.UTF8.GetBytes("400 BYE");
                 stream.Write(response, 0, response.Length);
                 Console.WriteLine("🛑 Servidor encerrando conexão com o agregador.");
-                break;
+                client.Close();
+                break;  // Encerra o cliente após o comando FORWARD QUIT
             }
         }
 
         client.Close();
     }
 
+    // Função para registrar os dados no arquivo CSV
     static void LogToFile(string wavyId, string dataType, string value)
     {
         mutex.WaitOne();  // Bloqueia o acesso até a thread atual terminar
