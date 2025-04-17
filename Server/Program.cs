@@ -51,7 +51,7 @@ class Server
                     string dataType = parts[3].Trim();
                     string value = parts[4].Trim();
 
-                    LogToFile(wavyId, dataType, value);  // Registra os dados no arquivo de log
+                    LogToFile(wavyId, dataType, value);  // Regista os dados no arquivo de log
                 }
 
                 // Responde ao Agregador
@@ -62,7 +62,7 @@ class Server
             {
                 byte[] response = Encoding.UTF8.GetBytes("400 BYE");
                 stream.Write(response, 0, response.Length);
-                Console.WriteLine("🛑 Servidor encerrando conexão com WAVY.");
+                Console.WriteLine("🛑 Servidor encerrando conexão com o agregador.");
                 break;
             }
         }
