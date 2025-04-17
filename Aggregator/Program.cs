@@ -18,50 +18,37 @@ class Aggregator
     static Dictionary<string, string> wavyStates;
     static Dictionary<string, RoutingRule> routingRules;
     static List<string> dataBuffer = new List<string>();  // Armazena os dados recebidos
-    static System.Timers.Timer dataTimer;  // Timer para enviar os dados a cada 30 segundos
-    static System.Timers.Timer collectTimer;  // Timer para coletar dados por 10 segundos
+    static System.Timers.Timer dataSendTimer;  // Temporizador para enviar os dados a cada 40 segundos
     static bool isRunning = true; // Flag para controlar a execução do servidor
-    static System.Timers.Timer dataSendTimer;
-    
-    static List<Thread> activeThreads = new List<Thread>(); // Lista de threads ativas para encerrar depois
     static TcpListener listener = new TcpListener(IPAddress.Any, 5000);
+
     static void Main()
     {
         wavyStates = LoadWavyStates("waves.csv");
         routingRules = LoadRoutingRules("routing.csv");
 
-        // Inicializa o listener para aceitar conexões dos dispositivos WAVY
-        TcpListener listener = new TcpListener(IPAddress.Any, 5000);
         listener.Start();
-        Console.WriteLine("Aggregator started, waiting for WAVY devices...");
-
-        /* // Timer para enviar os dados acumulados a cada 30 segundos
-         dataTimer = new System.Timers.Timer(40000); // 
-         dataTimer.Elapsed += (sender, e) => SendDataToServer(); // Envia dados ao servidor a cada 40 segundos
-         dataTimer.Start();
-
-         // Timer para coletar os dados a cada 40 segundos
-         collectTimer = new System.Timers.Timer(40000); 
-         collectTimer.Elapsed += (sender, e) => CollectData(); // Coleta dados a cada 0 segundos
-         collectTimer.Start();*/
+        Console.WriteLine("Agregador iniciado, aguardando dispositivos WAVY...");
 
         // Temporizador para enviar os dados acumulados a cada 40 segundos
-        dataSendTimer = new System.Timers.Timer(40000);  // 40 segundos
-        dataSendTimer.Elapsed += (sender, e) => SendDataToServer(); // Envia dados ao servidor a cada 40 segundos
+        dataSendTimer = new System.Timers.Timer(40000);
+        dataSendTimer.Elapsed += (sender, e) => SendDataToServer();
         dataSendTimer.Start();
+
         // Inicia o thread para lidar com comandos do console
         Thread consoleThread = new Thread(HandleConsoleCommands);
         consoleThread.Start();
 
-        while (isRunning) // A execução do servidor depende da flag isRunning
+        while (isRunning)
         {
             TcpClient wavyClient = listener.AcceptTcpClient();
             Thread t = new Thread(() => HandleWavy(wavyClient));
             t.Start();
         }
 
-        Console.WriteLine("Aggregator stopped.");
+        Console.WriteLine("Agregador encerrado.");
     }
+
     static void HandleConsoleCommands()
     {
         while (isRunning)
@@ -83,7 +70,6 @@ class Aggregator
             else if (command == "FORWARD_QUIT")
             {
                 SendForwardQuitToServer();  // Envia FORWARD QUIT para o servidor
-
             }
             else
             {
@@ -94,20 +80,13 @@ class Aggregator
 
     static void SendForwardQuitToServer()
     {
-        // Envia o comando FORWARD QUIT para o servidor
         ForwardToServer("FORWARD QUIT", null, "127.0.0.1", 5001);
 
-        // Exibe mensagem de confirmação de fechamento do servidor
-        Console.WriteLine("Conexão com o servidor encerrada.");
-
         // Fechar o listener para que ele pare de aceitar novas conexões
-        if (listener.Server.IsBound)  // Verifica se o listener está ativo
-        {
-            listener.Stop(); // Isso vai parar o listener e impedir novas conexões
-            Console.WriteLine("Listener parado.");
-        }
+        listener.Stop();
+        Console.WriteLine("Listener parado.");
 
-        // Fechar a flag isRunning para que o Agregador pare
+        // Fechar o flag isRunning para que o Agregador pare
         isRunning = false;
 
         // Salva os dados no arquivo CSV antes de encerrar
