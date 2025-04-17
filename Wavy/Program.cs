@@ -42,9 +42,11 @@ class Wavy
                 // Enviar uma mensagem de saída para o Agregador
                 SendMessage(stream, "QUIT");
                 // Parar o temporizador e fechar a conexão
-                dataTimer?.Stop();  // Garante que o temporizador seja parado antes de encerrar
-
-                break; // Saí do loop de execução após enviar o comando de saída
+                //dataTimer?.Stop();  // Garante que o temporizador seja parado antes de encerrar
+                dataCollectionTimer?.Stop();
+                dataSendTimer?.Stop();
+                
+                break;
             }
             else
             {
@@ -128,7 +130,7 @@ class Wavy
         dataCollectionTimer.Start();
 
         // Temporizador para enviar dados ao Agregador a cada 30 segundos
-        dataSendTimer = new System.Timers.Timer(10000);
+        dataSendTimer = new System.Timers.Timer(3000);
         dataSendTimer.Elapsed += (sender, e) => SendData();
         dataSendTimer.Start();
 

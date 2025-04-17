@@ -63,6 +63,7 @@ class Server
                 byte[] response = Encoding.UTF8.GetBytes("400 BYE");
                 stream.Write(response, 0, response.Length);
                 Console.WriteLine("🛑 Servidor encerrando conexão com o agregador.");
+                client.Close();
                 break;
             }
         }
