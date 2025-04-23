@@ -14,6 +14,7 @@ class Wavy
     static Random random = new Random(); // Instância para gerar números aleatórios
     static string wavyId;  // Variável para armazenar o ID do WAVY após o registro
     static List<string> dataBuffer = new List<string>();
+    static bool isDataGenerationStopped = false;
 
     // Flag para controlar se os dados estão sendo gerados
     static bool isGeneratingData = true;
@@ -53,6 +54,7 @@ class Wavy
             else if (command == "STOP DATA")
             {
                 StopDataGeneration(); // Comando para parar a geração de dados
+
             }
             else
             {
@@ -101,6 +103,8 @@ class Wavy
     static void StopDataGeneration()
     {
         isGeneratingData = false;
+      
+        dataCollectionTimer.Stop();
         Console.WriteLine("Geração de dados parada.");
     }
 
@@ -143,7 +147,7 @@ class Wavy
     {
         if (dataBuffer.Count == 0)
         {
-            Console.WriteLine("Nenhum dado para enviar.");
+            ;
             return;
         }
 
@@ -154,6 +158,9 @@ class Wavy
         // Enviar os dados para o Agregador
         SendMessage(stream, message);
         Console.WriteLine($"Dados enviados ao Agregador: {message}");
+
+        string ack = ReceiveMessage();
+        Console.WriteLine($"Resposta do Agregador: {ack}");
 
         // Limpa o buffer após o envio
         dataBuffer.Clear();

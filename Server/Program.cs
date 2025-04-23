@@ -65,6 +65,14 @@ class Server
                 byte[] response = Encoding.UTF8.GetBytes("100 OK");
                 stream.Write(response, 0, response.Length);
             }
+            else if (message.StartsWith("FORWARD FILE"))
+            {
+                Console.WriteLine("Arquivo recebido para processamento.");
+
+                // (Aqui poderias eventualmente processar o arquivo se quiseres)
+                byte[] response = Encoding.UTF8.GetBytes("100 OK");
+                stream.Write(response, 0, response.Length);
+            }
             // Processamento do comando FORWARD QUIT
             else if (message.StartsWith("FORWARD QUIT"))
             {
